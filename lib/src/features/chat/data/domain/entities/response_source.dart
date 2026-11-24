@@ -1,0 +1,1 @@
+enum ResponseSource { simulated, gemini }

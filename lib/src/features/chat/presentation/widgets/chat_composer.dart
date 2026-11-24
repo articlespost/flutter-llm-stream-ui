@@ -7,12 +7,14 @@ class ChatComposer extends StatelessWidget {
   const ChatComposer({
     super.key,
     required this.controller,
+    required this.hintText,
     required this.isStreaming,
     required this.onSend,
     required this.onStop,
   });
 
   final TextEditingController controller;
+  final String hintText;
   final bool isStreaming;
   final VoidCallback onSend;
   final VoidCallback onStop;
@@ -32,7 +34,7 @@ class ChatComposer extends StatelessWidget {
             textCapitalization: TextCapitalization.sentences,
             onSubmitted: (_) => onSend(),
             decoration: InputDecoration(
-              hintText: ChatScreenStrings.promptHint,
+              hintText: hintText,
               counterText: '',
               filled: true,
               border: OutlineInputBorder(

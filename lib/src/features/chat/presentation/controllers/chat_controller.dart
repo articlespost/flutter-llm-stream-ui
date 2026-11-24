@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:llm_stream_ui/src/core/markdown/incremental_markdown_document.dart';
 import 'package:llm_stream_ui/src/features/chat/data/domain/entities/chat_message.dart';
+import 'package:llm_stream_ui/src/features/chat/data/domain/entities/completion_event.dart';
+import 'package:llm_stream_ui/src/features/chat/data/domain/entities/completion_failure.dart';
+import 'package:llm_stream_ui/src/features/chat/data/domain/entities/response_source.dart';
+import 'package:llm_stream_ui/src/features/chat/data/domain/entities/search_grounding.dart';
 import 'package:llm_stream_ui/src/features/chat/data/services/chat_service.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/controllers/streaming_message_controller.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/state/chat_state.dart';
@@ -13,7 +17,8 @@ class ChatController extends ValueNotifier<ChatState> {
   final ChatService _service;
   final Map<int, StreamingMessageController> _streams = {};
   final StringBuffer _naiveBuffer = StringBuffer();
-  StreamSubscription<String>? _subscription;
+  StreamSubscription<CompletionEvent>? _subscription;
+  SearchGrounding? _grounding;
   int _nextId = 0;
   int? _activeMessageId;
   bool _isDisposed = false;
@@ -23,9 +28,16 @@ class ChatController extends ValueNotifier<ChatState> {
   ValueListenable<MarkdownSnapshot>? snapshotFor(int messageId) =>
       _streams[messageId];
 
+  bool isAvailable(ResponseSource source) => _service.isAvailable(source);
+
   void changeStrategy(RenderingStrategy strategy) {
     if (value.isStreaming) return;
     _emit(value.copyWith(strategy: strategy));
+  }
+
+  void changeSource(ResponseSource source) {
+    if (value.isStreaming || !_service.isAvailable(source)) return;
+    _emit(value.copyWith(source: source));
   }
 
   void send(String prompt) {
@@ -39,6 +51,7 @@ class ChatController extends ValueNotifier<ChatState> {
     final assistantId = _nextId++;
     _activeMessageId = assistantId;
     _naiveBuffer.clear();
+    _grounding = null;
 
     final isOptimized = value.strategy == RenderingStrategy.optimized;
     final streaming = isOptimized ? StreamingMessageController() : null;
@@ -52,15 +65,19 @@ class ChatController extends ValueNotifier<ChatState> {
           ChatMessage(id: assistantId, role: MessageRole.assistant, text: ''),
         ],
         status: ChatStatus.streaming,
-        hasError: false,
+        failure: null,
       ),
     );
 
+    final onText = streaming?.add ?? _appendNaive;
     _subscription = _service
-        .streamCompletion(prompt)
+        .streamCompletion(prompt, source: value.source)
         .listen(
-          streaming?.add ?? _appendNaive,
-          onError: (Object _) => _finish(hasError: true),
+          (event) => switch (event) {
+            TextDelta(:final text) => onText(text),
+            GroundingReceived(:final grounding) => _grounding = grounding,
+          },
+          onError: (Object error) => _finish(failure: _failureOf(error)),
           onDone: _finish,
           cancelOnError: true,
         );
@@ -83,7 +100,12 @@ class ChatController extends ValueNotifier<ChatState> {
     _emit(value.copyWith(messages: messages));
   }
 
-  void _finish({bool hasError = false}) {
+  static CompletionFailure _failureOf(Object error) =>
+      error is CompletionFailure
+      ? error
+      : const CompletionFailure(CompletionFailureReason.interrupted);
+
+  void _finish({CompletionFailure? failure}) {
     final messageId = _activeMessageId;
     if (messageId == null) return;
     _activeMessageId = null;
@@ -103,10 +125,12 @@ class ChatController extends ValueNotifier<ChatState> {
       value.copyWith(
         messages: [
           for (final message in value.messages)
-            message.id == messageId ? message.copyWith(text: text) : message,
+            message.id == messageId
+                ? message.copyWith(text: text, grounding: _grounding)
+                : message,
         ],
         status: ChatStatus.idle,
-        hasError: hasError,
+        failure: failure,
       ),
     );
   }

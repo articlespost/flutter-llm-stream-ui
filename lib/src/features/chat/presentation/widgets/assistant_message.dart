@@ -8,10 +8,12 @@ class AssistantMessage extends StatelessWidget {
     super.key,
     required this.content,
     required this.copyText,
+    this.footer,
   });
 
   final Widget content;
   final String? copyText;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +38,7 @@ class AssistantMessage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               content,
+              ?footer,
               if (copyText != null && copyText.isNotEmpty)
                 Align(
                   alignment: Alignment.centerLeft,

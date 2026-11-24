@@ -29,13 +29,20 @@ void main() {
   bool isStreaming(WidgetTester tester) =>
       find.byIcon(Icons.stop_rounded).evaluate().isNotEmpty;
 
+  Future<void> tapSuggestion(WidgetTester tester, String suggestion) async {
+    final chip = find.text(suggestion);
+    await tester.ensureVisible(chip);
+    await tester.pump();
+    await tester.tap(chip);
+    await tester.pump();
+  }
+
   testWidgets('modo otimizado renderiza a resposta em Markdown até o fim', (
     tester,
   ) async {
     await pumpApp(tester);
 
-    await tester.tap(find.text(ChatScreenStrings.suggestions.first));
-    await tester.pump();
+    await tapSuggestion(tester, ChatScreenStrings.suggestions.first);
     expect(isStreaming(tester), isTrue);
     expect(find.byType(StreamingMarkdownView), findsOneWidget);
 
@@ -53,8 +60,7 @@ void main() {
 
     await tester.tap(find.text(ChatScreenStrings.naive));
     await tester.pump();
-    await tester.tap(find.text(ChatScreenStrings.suggestions.first));
-    await tester.pump();
+    await tapSuggestion(tester, ChatScreenStrings.suggestions.first);
     expect(find.byType(StreamingMarkdownView), findsNothing);
 
     await pumpUntil(tester, () => !isStreaming(tester));
@@ -64,22 +70,44 @@ void main() {
     expect(find.byType(CodeBlockView), findsOneWidget);
   });
 
-  testWidgets('seletor de modo fica desabilitado durante o streaming', (
-    tester,
-  ) async {
-    await pumpApp(tester);
+  testWidgets(
+    'seletores de modo e de fonte ficam desabilitados durante o streaming',
+    (tester) async {
+      await pumpApp(tester);
 
-    await tester.tap(find.text(ChatScreenStrings.suggestions.first));
-    await tester.pump();
+      await tapSuggestion(tester, ChatScreenStrings.suggestions.first);
 
-    final selector = tester.widget<SegmentedButton<Object>>(
-      find.byWidgetPredicate((widget) => widget is SegmentedButton),
-    );
-    expect(selector.onSelectionChanged, isNull);
+      final selectors = tester.widgetList<SegmentedButton<Object>>(
+        find.byWidgetPredicate((widget) => widget is SegmentedButton),
+      );
+      expect(selectors, hasLength(2));
+      for (final selector in selectors) {
+        expect(selector.onSelectionChanged, isNull);
+      }
 
-    await tester.tap(find.byIcon(Icons.stop_rounded));
-    await tester.pump(const Duration(milliseconds: 16));
-    await tester.pump();
-    expect(isStreaming(tester), isFalse);
-  });
+      await tester.tap(find.byIcon(Icons.stop_rounded));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump();
+      expect(isStreaming(tester), isFalse);
+    },
+  );
+
+  testWidgets(
+    'fonte simulada avisa que só responde aos 4 temas fixos e o Gemini fica desabilitado sem proxy',
+    (tester) async {
+      await pumpApp(tester);
+
+      expect(find.text(ChatScreenStrings.simulatedNotice), findsOneWidget);
+      expect(find.text(ChatScreenStrings.geminiSetupNotice), findsOneWidget);
+      for (final suggestion in ChatScreenStrings.suggestions) {
+        expect(find.text(suggestion), findsOneWidget);
+      }
+
+      await tester.tap(find.text(ChatScreenStrings.geminiSource));
+      await tester.pump();
+
+      expect(find.text(ChatScreenStrings.simulatedNotice), findsOneWidget);
+      expect(find.text(ChatScreenStrings.geminiNotice), findsNothing);
+    },
+  );
 }

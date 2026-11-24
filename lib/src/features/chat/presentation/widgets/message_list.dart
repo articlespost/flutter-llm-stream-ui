@@ -6,6 +6,7 @@ import 'package:llm_stream_ui/src/features/chat/data/domain/entities/chat_messag
 import 'package:llm_stream_ui/src/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/state/chat_state.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/widgets/assistant_message.dart';
+import 'package:llm_stream_ui/src/features/chat/presentation/widgets/grounding_view.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/widgets/user_message_bubble.dart';
 
 class MessageList extends StatelessWidget {
@@ -47,9 +48,16 @@ class MessageList extends StatelessWidget {
         StreamingMarkdownView(snapshot: snapshot),
       _ => MarkdownView(source: message.text, showCursor: isActive),
     };
+    final grounding = message.grounding;
     return AssistantMessage(
       content: content,
       copyText: isActive ? null : message.text,
+      footer: grounding == null || isActive
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.md),
+              child: GroundingView(grounding: grounding),
+            ),
     );
   }
 }

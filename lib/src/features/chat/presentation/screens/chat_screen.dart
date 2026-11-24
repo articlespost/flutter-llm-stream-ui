@@ -3,12 +3,14 @@ import 'package:llm_stream_ui/src/core/di/app_scope.dart';
 import 'package:llm_stream_ui/src/core/performance/frame_metrics_monitor.dart';
 import 'package:llm_stream_ui/src/core/performance/widgets/performance_hud.dart';
 import 'package:llm_stream_ui/src/core/theme/app_spacing.dart';
+import 'package:llm_stream_ui/src/features/chat/data/domain/entities/response_source.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/controllers/chat_controller.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/screens/chat_screen.strings.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/state/chat_state.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/widgets/chat_composer.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/widgets/empty_chat.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/widgets/message_list.dart';
+import 'package:llm_stream_ui/src/features/chat/presentation/widgets/response_source_selector.dart';
 import 'package:llm_stream_ui/src/features/chat/presentation/widgets/strategy_selector.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -40,12 +42,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _onStateChanged() {
-    final hasError = _chat.value.hasError;
-    if (hasError && !_hadError && mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(ChatScreenStrings.streamError)));
+    final failure = _chat.value.failure;
+    if (failure != null && !_hadError && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ChatScreenStrings.failure(failure.reason))),
+      );
     }
-    _hadError = hasError;
+    _hadError = failure != null;
   }
 
   void _send(String prompt) {
@@ -96,10 +99,24 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(height: AppSpacing.sm),
                       ValueListenableBuilder<ChatState>(
                         valueListenable: _chat,
-                        builder: (context, state, _) => StrategySelector(
-                          strategy: state.strategy,
-                          isEnabled: !state.isStreaming,
-                          onChanged: _chat.changeStrategy,
+                        builder: (context, state, _) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            StrategySelector(
+                              strategy: state.strategy,
+                              isEnabled: !state.isStreaming,
+                              onChanged: _chat.changeStrategy,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            ResponseSourceSelector(
+                              source: state.source,
+                              isEnabled: !state.isStreaming,
+                              isGeminiAvailable: _chat.isAvailable(
+                                ResponseSource.gemini,
+                              ),
+                              onChanged: _chat.changeSource,
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -109,7 +126,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: ValueListenableBuilder<ChatState>(
                     valueListenable: _chat,
                     builder: (context, state, _) => state.messages.isEmpty
-                        ? EmptyChat(onSuggestionSelected: _send)
+                        ? EmptyChat(
+                            source: state.source,
+                            isGeminiAvailable: _chat.isAvailable(
+                              ResponseSource.gemini,
+                            ),
+                            onSuggestionSelected: _send,
+                          )
                         : MessageList(state: state, controller: _chat),
                   ),
                 ),
@@ -124,6 +147,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     valueListenable: _chat,
                     builder: (context, state, _) => ChatComposer(
                       controller: _prompt,
+                      hintText: state.source == ResponseSource.gemini
+                          ? ChatScreenStrings.geminiPromptHint
+                          : ChatScreenStrings.simulatedPromptHint,
                       isStreaming: state.isStreaming,
                       onSend: () => _send(_prompt.text),
                       onStop: _chat.stop,

@@ -38,6 +38,8 @@ void main() {
     await openChat(tester);
     await tester.tap(find.text(strategyLabel));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text(stressPrompt));
+    await tester.pumpAndSettle();
 
     await Future<void>.delayed(const Duration(seconds: 2));
     final timings = <FrameTiming>[];
@@ -45,6 +47,8 @@ void main() {
     binding.addTimingsCallback(watcher);
 
     await tester.tap(find.text(stressPrompt));
+    await tester.pump();
+    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
     await waitForResponse(tester);
 
     await Future<void>.delayed(const Duration(seconds: 2));
