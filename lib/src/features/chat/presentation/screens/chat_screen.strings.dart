@@ -6,7 +6,7 @@ abstract final class ChatScreenStrings {
   static String get naive => 'Ingênuo';
   static String get optimized => 'Otimizado';
   static String get simulatedSource => 'Simulada';
-  static String get geminiSource => 'Gemini + Google';
+  static String get geminiSource => 'Gemini';
   static String get geminiNotConfigured =>
       'Configure o proxy do Gemini para usar esta fonte (veja o README).';
   static String get simulatedPromptHint => 'Fonte simulada: só 4 temas fixos';
@@ -27,11 +27,13 @@ abstract final class ChatScreenStrings {
       'recebe a resposta sobre streams em Dart.';
   static String get geminiSetupNotice =>
       'Para perguntar qualquer coisa, ligue o proxy do Gemini e escolha '
-      '"Gemini + Google". O passo a passo está no README.';
+      '"Gemini". O passo a passo está no README.';
   static String get geminiNotice =>
-      'O Gemini responde qualquer pergunta, com busca no Google, pelo proxy '
-      'local. No plano gratuito, o Google pode usar o conteúdo enviado para '
-      'melhorar os produtos: não envie dados pessoais ou sigilosos.';
+      'O Gemini responde qualquer pergunta pelo proxy local. Por padrão, ele '
+      'usa o próprio conhecimento, sem pesquisar na web; com a busca no '
+      'Google ligada no proxy, a resposta traz as fontes. No plano gratuito, '
+      'o Google pode usar o conteúdo enviado para melhorar os produtos: não '
+      'envie dados pessoais ou sigilosos.';
 
   static List<String> get suggestions => const [
     'Explique streams em Dart',
@@ -42,7 +44,7 @@ abstract final class ChatScreenStrings {
 
   static List<String> get geminiSuggestions => const [
     'O que é Flutter?',
-    'Quais são as novidades mais recentes do Flutter?',
+    'Explique o ciclo de vida de um StatefulWidget',
     'Compare Flutter e Kotlin Multiplatform',
   ];
 

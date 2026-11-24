@@ -188,7 +188,9 @@ class ProxyServer {
       }
       await _send(socket, event: 'done', data: '{}');
     } on GeminiApiException catch (error) {
-      outcome = 'upstream ${error.statusCode} ${error.status}';
+      outcome =
+          'upstream ${error.statusCode} ${error.status}: '
+          '${_shorten(error.message)}';
       await _send(
         socket,
         event: 'error',
@@ -248,6 +250,14 @@ class ProxyServer {
       onCancel: () => subscription?.cancel(),
     );
     return controller.stream;
+  }
+
+  static String _shorten(String message) {
+    const maxLength = 200;
+    final singleLine = message.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return singleLine.length <= maxLength
+        ? singleLine
+        : '${singleLine.substring(0, maxLength)}...';
   }
 
   static String _codeFor(int statusCode) => switch (statusCode) {

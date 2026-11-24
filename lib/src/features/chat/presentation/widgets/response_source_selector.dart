@@ -28,7 +28,7 @@ class ResponseSourceSelector extends StatelessWidget {
         ),
         ButtonSegment(
           value: ResponseSource.gemini,
-          icon: const Icon(Icons.travel_explore_rounded),
+          icon: const Icon(Icons.cloud_outlined),
           label: Text(ChatScreenStrings.geminiSource),
           enabled: isGeminiAvailable,
           tooltip: isGeminiAvailable

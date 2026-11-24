@@ -124,10 +124,12 @@ void main() {
   Future<void> startProxy({
     int requestsPerMinute = 10,
     int maxBodyBytes = 16 * 1024,
+    bool useGoogleSearch = false,
   }) async {
     final config = ProxyConfig(
       apiKey: _apiKey,
       port: 0,
+      useGoogleSearch: useGoogleSearch,
       apiBaseUrl: gemini.baseUrl,
       requestsPerMinute: requestsPerMinute,
       maxBodyBytes: maxBodyBytes,
@@ -211,7 +213,7 @@ void main() {
     'envia a chave só no cabeçalho, com o modelo e a busca ativada',
     () async {
       gemini.chunks = [_textChunk('ok')];
-      await startProxy();
+      await startProxy(useGoogleSearch: true);
 
       await events(await post({'prompt': 'Oi'}));
       await untilLogged();
@@ -236,6 +238,16 @@ void main() {
     },
   );
 
+  test('com a busca desligada, não envia a ferramenta de busca', () async {
+    gemini.chunks = [_textChunk('ok')];
+    await startProxy();
+
+    await events(await post({'prompt': 'Oi'}));
+
+    expect(gemini.paths.single, contains(ProxyConfig.defaultModel));
+    expect(gemini.bodies.single.containsKey('tools'), isFalse);
+  });
+
   test('tenta de novo com backoff quando o Gemini está indisponível', () async {
     gemini
       ..statusQueue.addAll([503, 429])
@@ -255,6 +267,8 @@ void main() {
 
     final received = await events(await post({'prompt': 'Oi'}));
 
+    await untilLogged();
+
     expect(gemini.requestCount, 1);
     expect(received.single.event, 'error');
     expect(jsonDecode(received.single.data), {
@@ -262,6 +276,8 @@ void main() {
       'status': 403,
       'detail': 'falha simulada',
     });
+    expect(logs.single, contains('upstream 403 SIMULATED: falha simulada'));
+    expect(logs.single, isNot(contains(_apiKey)));
   });
 
   test('valida o pedido antes de chamar o Gemini', () async {
@@ -344,7 +360,7 @@ void main() {
     expect(jsonDecode(body), {
       'status': 'ok',
       'model': ProxyConfig.defaultModel,
-      'googleSearch': true,
+      'googleSearch': false,
     });
     expect(body, isNot(contains(_apiKey)));
   });

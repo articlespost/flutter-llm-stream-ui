@@ -10,27 +10,37 @@ void main() {
       );
     });
 
-    test('usa o modelo gratuito com busca e a porta padrão', () {
+    test('por padrão usa o modelo gratuito, sem busca, na porta padrão', () {
       final config = ProxyConfig.fromEnvironment(const {
         'GEMINI_API_KEY': 'chave-sintetica',
       });
 
-      expect(config.model, ProxyConfig.defaultModel);
-      expect(config.useGoogleSearch, isTrue);
+      expect(config.model, 'gemini-3.5-flash-lite');
+      expect(config.useGoogleSearch, isFalse);
       expect(config.port, ProxyConfig.defaultPort);
     });
 
     test('lê modelo, busca e porta das variáveis', () {
       final config = ProxyConfig.fromEnvironment(const {
         'GEMINI_API_KEY': 'chave-sintetica',
-        'GEMINI_MODEL': 'gemini-3.5-flash-lite',
-        'GEMINI_GOOGLE_SEARCH': 'false',
+        'GEMINI_MODEL': 'gemini-2.5-flash-lite',
+        'GEMINI_GOOGLE_SEARCH': 'true',
         'PROXY_PORT': '9090',
       });
 
-      expect(config.model, 'gemini-3.5-flash-lite');
-      expect(config.useGoogleSearch, isFalse);
+      expect(config.model, 'gemini-2.5-flash-lite');
+      expect(config.useGoogleSearch, isTrue);
       expect(config.port, 9090);
+    });
+
+    test('rejeita valor inválido para a busca', () {
+      expect(
+        () => ProxyConfig.fromEnvironment(const {
+          'GEMINI_API_KEY': 'chave-sintetica',
+          'GEMINI_GOOGLE_SEARCH': 'talvez',
+        }),
+        throwsA(isA<ProxyConfigException>()),
+      );
     });
 
     test('rejeita modelo com caracteres de caminho e porta inválida', () {

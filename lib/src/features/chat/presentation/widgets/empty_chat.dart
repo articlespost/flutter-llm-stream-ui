@@ -35,9 +35,7 @@ class EmptyChat extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isGemini
-                  ? Icons.travel_explore_rounded
-                  : Icons.auto_awesome_rounded,
+              isGemini ? Icons.cloud_outlined : Icons.auto_awesome_rounded,
               size: 48,
               color: theme.colorScheme.primary,
             ),

@@ -11,7 +11,7 @@ class ProxyConfig {
   const ProxyConfig({
     required this.apiKey,
     this.model = defaultModel,
-    this.useGoogleSearch = true,
+    this.useGoogleSearch = false,
     this.port = defaultPort,
     this.apiBaseUrl = defaultApiBaseUrl,
     this.maxPromptLength = 2000,
@@ -46,7 +46,7 @@ class ProxyConfig {
     );
   }
 
-  static const String defaultModel = 'gemini-2.5-flash-lite';
+  static const String defaultModel = 'gemini-3.5-flash-lite';
   static const int defaultPort = 8787;
   static const String defaultApiBaseUrl =
       'https://generativelanguage.googleapis.com';
@@ -69,10 +69,10 @@ class ProxyConfig {
 
   static bool _parseBool(String? value, {required String name}) {
     final normalized = value?.trim().toLowerCase() ?? '';
-    if (normalized.isEmpty || normalized == 'true' || normalized == '1') {
-      return true;
+    if (normalized == 'true' || normalized == '1') return true;
+    if (normalized.isEmpty || normalized == 'false' || normalized == '0') {
+      return false;
     }
-    if (normalized == 'false' || normalized == '0') return false;
     throw ProxyConfigException('$name deve ser true ou false.');
   }
 
