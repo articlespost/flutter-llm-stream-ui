@@ -26,7 +26,7 @@ Este repositório acompanha o artigo **"UI Reativa para GenAI no Flutter: Stream
 - como ligar um LLM de verdade sem colocar a chave da API no app;
 - como medir de verdade, e o que o emulador não consegue medir.
 
-🔗 **Leia o artigo completo no LinkedIn:** *(link em breve)*
+🔗 **Leia o artigo completo no LinkedIn:** [UI Reativa para GenAI no Flutter: Streaming de LLM em Markdown sem Jank](https://www.linkedin.com/pulse/ui-reativa-para-genai-flutter-streaming-de-llm-em-markdown-sim%C3%B5es-zpmye/)
 
 ---
 
